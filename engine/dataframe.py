@@ -16,7 +16,9 @@ class dataframe:
         for i,c in enumerate(columns): # 0 , movieId
             for r in rows:
                 if c not in ['timestamp']:
-                    if c in ['movieId','year','userId','rating']:
+                    if c in ['movieId','year','userId']:
+                        d.setdefault(c,[]).append(int(r[i]))
+                    elif c == 'rating':
                         d.setdefault(c,[]).append(float(r[i]))
                     else:
                         d.setdefault(c,[]).append(r[i])
