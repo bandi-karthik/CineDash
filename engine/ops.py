@@ -59,8 +59,11 @@ class functions:
             cur_idx = []
             for i,j in enumerate(cur_col_values):
                 if col not in ['movieId','year','userId','rating']:
-                    j = j.lower()
-                    val = val.lower()
+                    try:
+                        j = j.lower()
+                        val = val.lower()
+                    except AttributeError: # Handle if 'j' is a number
+                        pass
                 if cond == '=':
                     if j == val:
                         cur_idx.append(df['index'][i])
@@ -132,6 +135,7 @@ class functions:
 
             return d
         else:
+            
             return df
         
     
@@ -146,13 +150,13 @@ class functions:
             for c in groupby_columns:
                 cur_row.append(df[c][i])
 
-            groups.setdefault(tuple(cur_row), []).append(i) # {(1995,): [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+            groups.setdefault(tuple(cur_row), []).append(i) # cur_row-values tuple : idx where it occured 
        
         d = {}
         
         for col, val_idx in groups.items():
             for i, col_name in enumerate(groupby_columns):
-                d.setdefault(col_name, []).append(col[i]) #{'year':['1995']}
+                d.setdefault(col_name, []).append(col[i]) 
                 
 
             try:
@@ -171,7 +175,10 @@ class functions:
                     elif agg_type == 'sum':
                         su = 0
                         for i in agg_data:
-                            su = su + i
+                            try:
+                                su = su + i
+                            except TypeError: # Handle mixed types
+                                su = su + float(i) 
                         d.setdefault(a_col + '_sum', []).append(su)
 
                     elif agg_type == 'avg':
@@ -180,33 +187,35 @@ class functions:
                         
                         for i in agg_data:
                             cnt = cnt + 1 
-                            su = su + i
+                            try:
+                                su = su + i
+                            except TypeError:
+                                su = su + float(i)
 
                         if cnt<1:
-                            return 'no records found to calcuate the average, zero divide error!'
-                                
-                        d.setdefault(a_col+'_avg',[]).append(su/cnt)
+                            # return 'no records found to calcuate the average, zero divide error!'
+                            d.setdefault(a_col+'_avg',[]).append(0) # Safer return
+                        else:
+                            d.setdefault(a_col+'_avg',[]).append(su/cnt)
 
                     elif agg_type == 'min':
-                        min_val = agg_data[0]
+                        if not agg_data:
+                            min_val = None
+                        else:
+                            min_val = agg_data[0]
                         for i in agg_data:
                             if i<min_val:
                                 min_val = i 
-                        
-                        if min_val ==float('inf'):
-                            return 'no records to find the min'
-                            
                         d.setdefault(a_col + '_min', []).append(min_val)
                     
                     elif agg_type == 'max':
-                        max_val = agg_data[0]
+                        if not agg_data:
+                            max_val = None
+                        else:
+                            max_val = agg_data[0]
                         for i in agg_data:
                             if i>max_val:
                                 max_val = i 
-                        
-                        if max_val ==float('-inf'):
-                            return 'no records to find the min'
-                            
                         d.setdefault(a_col + '_max', []).append(max_val)
 
                     else:
@@ -218,4 +227,79 @@ class functions:
 
         return d 
         
+    def join(self, df_left, df_right, on_columns, how='inner'):
+        df_left = copy.deepcopy(df_left)
+        df_right = copy.deepcopy(df_right)
 
+        right_index = {}
+        l_right = self.df_len(df_right)
+
+        for i in range(l_right):
+            cur_key_values = []
+            for c in on_columns:
+                cur_key_values.append(df_right[c][i])
+            key = tuple(cur_key_values)
+            right_index.setdefault(key, []).append(i)
+
+        d = {} 
+        
+        d_cols = list(df_left.keys())
+        for c in df_right.keys():
+            if c not in on_columns:
+                d_cols.append(c)
+
+        for c in d_cols:
+            d[c] = []
+
+        used_right_indices = set() 
+        l_left = self.df_len(df_left)
+        
+        for i in range(l_left):
+            
+            cur_key_values = []
+            for c in on_columns:
+                cur_key_values.append(df_left[c][i])
+            key = tuple(cur_key_values)
+            
+            matched_right_indices = right_index.get(key)
+
+            if matched_right_indices:
+            
+                for j in matched_right_indices:
+                   
+                    for c_left in df_left.keys():
+                        d[c_left].append(df_left[c_left][i])
+                    
+                   
+                    for c_right in df_right.keys():
+                        if c_right not in on_columns:
+                            d[c_right].append(df_right[c_right][j])
+                    
+                    used_right_indices.add(j) 
+
+            elif how == 'left' or how == 'full':
+                          
+                for c_left in df_left.keys():
+                    d[c_left].append(df_left[c_left][i])
+                
+                for c_right in df_right.keys():
+                    if c_right not in on_columns:
+                        d[c_right].append('None') 
+
+        
+        if how == 'right' or how == 'full':
+            for i in range(l_right):
+                if i not in used_right_indices:
+                   
+                    for c in d.keys():
+                        if c in df_left.keys() and c not in on_columns:
+                 
+                            d[c].append('None')
+                        elif c in on_columns:
+                            
+                            d[c].append(df_right[c][i])
+                        elif c in df_right.keys():
+
+                            d[c].append(df_right[c][i])
+
+        return d
