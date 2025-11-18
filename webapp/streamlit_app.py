@@ -2,9 +2,6 @@ import os
 import sys
 import streamlit as st
 
-# ------------------------------------------------
-# Page config (must be the first Streamlit call)
-# ------------------------------------------------
 st.set_page_config(
     page_title="CineDashboard – MovieLens Explorer",
     page_icon="🚀",
@@ -12,9 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # sidebar collapsed by default
 )
 
-# ------------------------------------------------
-# Make project root importable so "engine" works
-# ------------------------------------------------
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -103,7 +98,6 @@ def engine_safe(df_or_msg, where):
     return df_or_msg
 
 
-# --- Data loading (logic unchanged) ---
 @st.cache_data(show_spinner=True)
 def load_data():
     parse = csvreader()
@@ -137,7 +131,7 @@ def load_data():
 
 # --- STYLED MAIN FUNCTION ---
 def main():
-    # --- Global CSS: sleek UI, fixed issues you mentioned ---
+
     st.markdown(
         """
         <style>
