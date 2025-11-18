@@ -227,79 +227,108 @@ class functions:
 
         return d 
         
-    def join(self, df_left, df_right, on_columns, how='inner'):
+    def join(self, df_left, df_right, on_columns, how='inner', left_suffix='', right_suffix=''):
+
         df_left = copy.deepcopy(df_left)
         df_right = copy.deepcopy(df_right)
 
+        if not df_left:
+            l_left = 0
+        else:
+            l_left = len(df_left[list(df_left.keys())[0]])
+
+        if not df_right:
+            l_right = 0
+        else:
+            l_right = len(df_right[list(df_right.keys())[0]])
+
         right_index = {}
-        l_right = self.df_len(df_right)
-
-        for i in range(l_right):
-            cur_key_values = []
+        for j in range(l_right):
+            key_vals = []
             for c in on_columns:
-                cur_key_values.append(df_right[c][i])
-            key = tuple(cur_key_values)
-            right_index.setdefault(key, []).append(i)
+                key_vals.append(df_right[c][j])
+            key = tuple(key_vals)
+            right_index.setdefault(key, []).append(j)
 
-        d = {} 
-        
-        d_cols = list(df_left.keys())
+        result_cols = {}
+
+        for c in df_left.keys():
+            if c in df_right.keys():
+                if c in on_columns:
+
+                    new_name = c
+                elif left_suffix or right_suffix:
+
+                    new_name = c + (left_suffix or "_left")
+                else:
+                    new_name = c
+            else:
+                new_name = c
+
+            result_cols[new_name] = ("left", c)
+
+
         for c in df_right.keys():
-            if c not in on_columns:
-                d_cols.append(c)
+            if c in on_columns:
+                continue
 
-        for c in d_cols:
-            d[c] = []
+            if c in df_left.keys():
+                if left_suffix or right_suffix:
+                    new_name = c + (right_suffix or "_right")
+                else:
+                    continue
+            else:
+                new_name = c
 
-        used_right_indices = set() 
-        l_left = self.df_len(df_left)
-        
+            if new_name in result_cols:
+                base = new_name
+                k = base
+                cnt = 1
+                while k in result_cols:
+                    k = f"{base}_{cnt}"
+                    cnt += 1
+                new_name = k
+
+            result_cols[new_name] = ("right", c)
+
+        d = {}
+        for col in result_cols.keys():
+            d[col] = []
+
+        used_right_indices = set()
+
+        def append_row(idx_left, idx_right):
+            for col, (side, orig) in result_cols.items():
+                if side == "left":
+                    if idx_left is None:
+                        d[col].append(None)
+                    else:
+                        d[col].append(df_left[orig][idx_left])
+                else:
+                    if idx_right is None:
+                        d[col].append(None)
+                    else:
+                        d[col].append(df_right[orig][idx_right])
+
         for i in range(l_left):
-            
-            cur_key_values = []
+            key_vals = []
             for c in on_columns:
-                cur_key_values.append(df_left[c][i])
-            key = tuple(cur_key_values)
-            
-            matched_right_indices = right_index.get(key)
+                key_vals.append(df_left[c][i])
+            key = tuple(key_vals)
 
-            if matched_right_indices:
-            
-                for j in matched_right_indices:
-                   
-                    for c_left in df_left.keys():
-                        d[c_left].append(df_left[c_left][i])
-                    
-                   
-                    for c_right in df_right.keys():
-                        if c_right not in on_columns:
-                            d[c_right].append(df_right[c_right][j])
-                    
-                    used_right_indices.add(j) 
+            matches = right_index.get(key)
 
-            elif how == 'left' or how == 'full':
-                          
-                for c_left in df_left.keys():
-                    d[c_left].append(df_left[c_left][i])
-                
-                for c_right in df_right.keys():
-                    if c_right not in on_columns:
-                        d[c_right].append('None') 
+            if matches:
+                for j in matches:
+                    append_row(i, j)
+                    used_right_indices.add(j)
+            else:
+                if how == "left" or how == "full":
+                    append_row(i, None)
 
-        
-        if how == 'right' or how == 'full':
-            for i in range(l_right):
-                if i not in used_right_indices:
-                   
-                    for c in d.keys():
-                        if c in df_left.keys() and c not in on_columns:
-                 
-                            d[c].append('None')
-                        elif c in on_columns:
-                            
-                            d[c].append(df_right[c][i])
-                        elif c in df_right.keys():
-
-                            d[c].append(df_right[c][i])
+        if how == "right" or how == "full":
+            for j in range(l_right):
+                if j not in used_right_indices:
+                    append_row(None, j)
 
         return d
