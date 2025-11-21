@@ -4,12 +4,16 @@ it loads the available datasets, and parse them, making them ready for the analy
 
 CineDash consists of the following 
 -> A Data2APP model, purely wirtten in python from scratch to replicate the pandas features like
+
     1. Parser : reads the csv files
+
     2. Dataframe.py 
       which formats the parsed data into dictionaries in the form of key value pairs, and adds indexing for the fast querying of the data.
+    
     3. function which used for the data querying like select_columns, orderby, groupby,aggregations like (sum,min,max,average), multi-joins, head, tail, limit.
+    
     4. Operations (engine/ops.py) include,
-        -> df_len(df) — count rows
+        -> df_len(df) — count rows    
         -> head(df, rows=5) / tail(df, rows=5)
         -> select_columns(df, cols)
         -> set_index(df) — adds a simple index column
