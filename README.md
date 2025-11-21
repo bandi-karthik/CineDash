@@ -29,23 +29,24 @@ MovieLens latest-small : https://grouplens.org/datasets/movielens/latest/
 
 ### Project Structure
 
-CineDash/
-├─ data/
-│  ├─ movies.csv
-│  ├─ ratings.csv
-│  ├─ tags.csv
-│  └─ links.csv
-├─ engine/
-│  ├─ parser.py        
-│  ├─ dataframe.py     # dataframe creation from the parsed data , converts into dictionary of lists.
-│  └─ ops.py           # all the operation like groupby, filter, orderby, projection, head,tail.
-├─ webapp/
-│  └─ streamlit_app.py # Streamlit UI 
-├─ tests/
-│  └─ tiny/...        
-└─ README.md
+    CineDash/
+    ├─ data/
+    │  ├─ movies.csv
+    │  ├─ ratings.csv
+    │  ├─ tags.csv
+    │  └─ links.csv
+    ├─ engine/
+    │  ├─ parser.py        
+    │  ├─ dataframe.py     # dataframe creation from the parsed data , converts into dictionary of lists.
+    │  └─ ops.py           # all the operation like groupby, filter, orderby, projection, head,tail.
+    ├─ webapp/
+    │  └─ streamlit_app.py # Streamlit UI 
+    ├─ tests/
+    │  └─ tiny/...        
+    └─ README.md
 
 ### Launch the App
+In the Terminal, run 
 
 streamlit run webapp/streamlit_app.py
 
