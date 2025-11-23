@@ -2,6 +2,9 @@ import os
 import sys
 import streamlit as st
 
+# ------------------------------------------------
+# Page config
+# ------------------------------------------------
 st.set_page_config(
     page_title="CineDashboard – MovieLens Explorer",
     page_icon="🚀",
@@ -9,7 +12,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # sidebar collapsed by default
 )
 
-
+# ------------------------------------------------
+# Make project root importable so "engine" works
+# ------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -98,6 +103,7 @@ def engine_safe(df_or_msg, where):
     return df_or_msg
 
 
+# --- Data loading (logic unchanged) ---
 @st.cache_data(show_spinner=True)
 def load_data():
     parse = csvreader()
@@ -129,9 +135,10 @@ def load_data():
     return df_movies, df_ratings, df_tags, movies_per_year, movies_ratings
 
 
-# --- STYLED MAIN FUNCTION ---
+# --- MAIN ---
 def main():
 
+    # --- Global CSS: style, no sidebar, fixed tabs & sliders ---
     st.markdown(
         """
         <style>
@@ -146,18 +153,17 @@ def main():
             --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.06);
         }
 
-        /* --- Base & Font (NO override on material icons anymore) --- */
+        /* --- Base & Font --- */
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        /* --- Make sure Material icons still use their own font so we don't see
-               'keyboard_double_arrow_right' as plain text --- */
+        /* --- Keep Material icons as icons (fix keyboard_double_arrow_right) --- */
         .material-icons, .material-icons-outlined {
             font-family: "Material Icons Outlined", "Material Icons" !important;
         }
 
-        /* --- Hide sidebar + its collapsed control completely --- */
+        /* --- Hide sidebar + collapsed control --- */
         [data-testid="stSidebar"] {
             display: none !important;
         }
@@ -344,25 +350,21 @@ def main():
             color: #1d4ed8;
         }
         
-        /* --- Slider Styling (fixed so labels are visible) --- */
-        /* Make overall slider a bit thinner and add spacing below for labels */
+        /* --- Slider Styling (labels visible) --- */
         [data-testid="stSlider"] [data-baseweb="slider"] {
             padding-bottom: 18px;
         }
 
-        /* Slider thumb */
         [data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
             background-color: #ffffff;
             border: 2px solid #1d4ed8;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
         }
         
-        /* Inactive track */
         [data-testid="stSlider"] [data-baseweb="slider"] > div:first-child {
             background-color: #e5e7eb;
         }
         
-        /* Active track (use lighter blue so it doesn't overpower the numbers) */
         [data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) {
             background: linear-gradient(90deg, #bfdbfe, #c7d2fe);
         }
@@ -372,7 +374,6 @@ def main():
             color: #374151;
         }
 
-        /* Try to give ticks / labels a light chip behind them (if present) */
         [data-testid="stSlider"] span {
             background-color: rgba(248, 250, 252, 0.85);
             border-radius: 4px;
@@ -447,7 +448,7 @@ def main():
         unsafe_allow_html=True,
     )
 
-    # --- Hero header (unchanged visually) ---
+    # --- Hero header ---
     st.markdown(
         """
         <div class="hero-header">
@@ -455,13 +456,12 @@ def main():
             <p class="hero-subtitle">
                 MovieLens analytics &amp; search powered by your custom SQL-style engine.
             </p>
-            
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # --- Data load (logic unchanged) ---
+    # --- Data load ---
     with st.spinner("Loading data with custom CSV parser and dataframe engine..."):
         df_movies, df_ratings, df_tags, movies_per_year, movies_ratings = load_data()
 
@@ -493,13 +493,11 @@ def main():
         max_year = max(valid_years)
 
         st.markdown('<div class="app-card app-card--soft">', unsafe_allow_html=True)
-        metrics_container = st.container()
-        with metrics_container:
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Movies", f"{total_movies:,}")
-            col2.metric("Ratings", f"{total_ratings:,}")
-            col3.metric("Unique Users", f"{unique_users:,}")
-            col4.metric("Year Range", f"{min_year} — {max_year}")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Movies", f"{total_movies:,}")
+        col2.metric("Ratings", f"{total_ratings:,}")
+        col3.metric("Unique Users", f"{unique_users:,}")
+        col4.metric("Year Range", f"{min_year} — {max_year}")
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(
@@ -537,30 +535,28 @@ def main():
         years = [y for y in years if isinstance(y, int) and y > 1800]
 
         st.markdown('<div class="app-card app-card--soft">', unsafe_allow_html=True)
-        filter_card = st.container()
-        with filter_card:
-            left_controls, _ = st.columns([1, 3])
+        left_controls, _ = st.columns([1, 3])
 
-            with left_controls:
-                selected_year = st.selectbox(
-                    "Filter by year", options=["All Years"] + years, index=len(years)
-                )
+        with left_controls:
+            selected_year = st.selectbox(
+                "Filter by year", options=["All Years"] + years, index=len(years)
+            )
 
-                min_avg_rating = st.slider(
-                    "Minimum average rating",
-                    min_value=0.0,
-                    max_value=5.0,
-                    value=3.5,
-                    step=0.5,
-                )
+            min_avg_rating = st.slider(
+                "Minimum average rating",
+                min_value=0.0,
+                max_value=5.0,
+                value=3.5,
+                step=0.5,
+            )
 
-                max_rows = st.slider(
-                    "Max rows to display",
-                    min_value=10,
-                    max_value=200,
-                    value=50,
-                    step=10,
-                )
+            max_rows = st.slider(
+                "Max rows to display",
+                min_value=10,
+                max_value=200,
+                value=50,
+                step=10,
+            )
         st.markdown('</div>', unsafe_allow_html=True)
 
         id_to_title = {}
@@ -778,7 +774,7 @@ def main():
             "to apply: **joins**, **filter**, **group by / aggregation**, **projection**, and **sorting**."
         )
 
-        # Step 0
+        # Step 0 -------------------------------------------------------------
         st.markdown(
             '<div class="step-chip"><span>0</span>Step 0 · Choose tables &amp; joins</div>',
             unsafe_allow_html=True,
@@ -836,12 +832,12 @@ def main():
 
         ops_local = functions()
         base_df_obj, base_suffix = get_df_and_suffix(base_table)
-        current_df = base_df_obj
+        working_df = base_df_obj
 
         if join1_enable and join1_table is not None:
             right_df, right_suffix = get_df_and_suffix(join1_table)
-            current_df = ops_local.join(
-                current_df,
+            working_df = ops_local.join(
+                working_df,
                 right_df,
                 ["movieId"],
                 how=join1_type,
@@ -851,16 +847,14 @@ def main():
 
         if join2_enable and join2_table is not None:
             right_df2, right_suffix2 = get_df_and_suffix(join2_table)
-            current_df = ops_local.join(
-                current_df,
+            working_df = ops_local.join(
+                working_df,
                 right_df2,
                 ["movieId"],
                 how=join2_type,
                 left_suffix="",
                 right_suffix=right_suffix2,
             )
-
-        working_df = current_df
 
         st.caption(
             "Current dataset = "
@@ -869,7 +863,7 @@ def main():
             + (f" {join2_type} join {join2_table}" if join2_enable and join2_table else "")
         )
 
-        # Step 1
+        # Step 1 -------------------------------------------------------------
         st.markdown(
             '<div class="step-chip"><span>1</span>Step 1 · Filter rows (WHERE)</div>',
             unsafe_allow_html=True,
@@ -886,51 +880,74 @@ def main():
             cols_available = list(working_df.keys())
             ops_list = ["=", "!=", ">", "<", ">=", "<="]
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                f1_col = st.selectbox("Column 1", options=cols_available, key="f1_col")
-            with col2:
-                f1_op = st.selectbox("Condition 1", options=ops_list, key="f1_op")
-            with col3:
-                f1_val_str = st.text_input("Value 1", key="f1_val")
+            # how many filter rows to show (stored in session_state)
+            if "qb_num_conditions" not in st.session_state:
+                st.session_state.qb_num_conditions = 1
 
-            if f1_val_str.strip() != "":
-                columns.append(f1_col)
-                conditions.append(f1_op)
-                values.append(parse_value(f1_col, f1_val_str))
-                seps.append("and")
+            # buttons to add / reset filter rows
+            btn_col_add, btn_col_reset = st.columns([1, 1])
+            with btn_col_add:
+                if st.button("➕ Add condition", key="qb_add_cond"):
+                    st.session_state.qb_num_conditions += 1
+            with btn_col_reset:
+                if st.button("🧹 Reset conditions", key="qb_reset_cond"):
+                    st.session_state.qb_num_conditions = 1
 
-            add_second = st.checkbox("Add second condition", value=False)
-            if add_second:
-                col4, col5, col6, col7 = st.columns(4)
-                with col4:
-                    f2_col = st.selectbox(
-                        "Column 2", options=cols_available, key="f2_col"
-                    )
-                with col5:
-                    f2_op = st.selectbox(
-                        "Condition 2", options=ops_list, key="f2_op"
-                    )
-                with col6:
-                    f2_val_str = st.text_input("Value 2", key="f2_val")
-                with col7:
-                    sep2 = st.selectbox(
-                        "Combine with", options=["and", "or"], key="sep2"
+            # render each condition row
+            for i in range(st.session_state.qb_num_conditions):
+                c1, c2, c3, c4 = st.columns([3, 2, 3, 2])
+
+                with c1:
+                    col_name = st.selectbox(
+                        f"Column {i + 1}",
+                        options=cols_available,
+                        key=f"qb_f_col_{i}",
                     )
 
-                if f2_val_str.strip() != "":
-                    columns.append(f2_col)
-                    conditions.append(f2_op)
-                    values.append(parse_value(f2_col, f2_val_str))
-                    seps.append(sep2)
+                with c2:
+                    op = st.selectbox(
+                        f"Condition {i + 1}",
+                        options=ops_list,
+                        key=f"qb_f_op_{i}",
+                    )
 
+                with c3:
+                    val_str = st.text_input(
+                        f"Value {i + 1}",
+                        key=f"qb_f_val_{i}",
+                    )
+
+                # first condition doesn't need a logical connector before it
+                if i == 0:
+                    sep = "and"
+                    with c4:
+                        st.markdown(
+                            "<div style='opacity:0.4; font-size:0.85rem; padding-top:1.1rem;'>First condition</div>",
+                            unsafe_allow_html=True,
+                        )
+                else:
+                    with c4:
+                        sep = st.selectbox(
+                            "Combine with",
+                            options=["and", "or"],
+                            key=f"qb_f_sep_{i}",
+                        )
+
+                # only add if user entered a value
+                if val_str.strip() != "":
+                    columns.append(col_name)
+                    conditions.append(op)
+                    values.append(parse_value(col_name, val_str))
+                    seps.append(sep)
+
+        # apply filter if we collected any conditions
         if columns:
             working_df = ops_local.filter(working_df, columns, conditions, values, seps)
             working_df = engine_safe(working_df, "filter")
             if working_df is None:
-                return
+                return  # stop query tab rendering here
 
-        # Step 2
+        # Step 2 -------------------------------------------------------------
         st.markdown(
             '<div class="step-chip"><span>2</span>Step 2 · Group by &amp; aggregation (optional)</div>',
             unsafe_allow_html=True,
@@ -987,7 +1004,7 @@ def main():
 
                 working_df = tmp_df
 
-        # Step 3
+        # Step 3 -------------------------------------------------------------
         st.markdown(
             '<div class="step-chip"><span>3</span>Step 3 · Projection &amp; sorting</div>',
             unsafe_allow_html=True,
