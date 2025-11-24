@@ -2,19 +2,13 @@ import os
 import sys
 import streamlit as st
 
-# ------------------------------------------------
-# Page config
-# ------------------------------------------------
 st.set_page_config(
     page_title="CineDashboard – MovieLens Explorer",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="collapsed",  # sidebar collapsed by default
+    initial_sidebar_state="collapsed",  
 )
 
-# ------------------------------------------------
-# Make project root importable so "engine" works
-# ------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -23,8 +17,6 @@ from engine.parser import csvreader
 from engine.dataframe import dataframe
 from engine.ops import functions
 
-
-# --- Helper functions (logic unchanged) ---
 
 def dict_len(df):
     return len(df[list(df.keys())[0]]) if df else 0
