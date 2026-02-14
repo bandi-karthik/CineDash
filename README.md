@@ -1,5 +1,5 @@
 # CineDash
-A Lightweight we Application built using Streamlit on top of the movies and their rating datasets
+A Lightweight Application built using Streamlit on top of the movies and their rating datasets
 it loads the available datasets, and parse them, making them ready for the analytics and data query for the users.
 
 CineDash consists of the following 
